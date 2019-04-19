@@ -1,0 +1,21 @@
+item code,quantity,purchase rate,sales rate
+barcode1,1,10,12
+59BA298947F1D,2,20,24
+barcode2,3,30,36
+barcode3,4,40,48
+barcode4,5,50,60
+barcode5,6,60,72
+barcode6,7,70,84
+barcode7,8,80,96
+barcode8,9,90,108
+barcode9,10,100,120
+barcode10,11,110,132
+barcode11,12,120,144
+barcode12,13,130,156
+barcode13,14,140,168
+barcode14,15,150,180
+barcode15,16,160,192
+barcode16,17,170,204
+barcode17,18,180,216
+barcode18,19,190,228
+barcode19,20,200,240

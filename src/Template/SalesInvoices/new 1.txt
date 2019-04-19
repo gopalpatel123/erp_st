@@ -1,0 +1,6 @@
+ device
+ BITMAP
+ Calibri
+ Times New Roman
+ monospace sans serif
+ 

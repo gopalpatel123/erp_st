@@ -1,0 +1,4 @@
+item code,quantity,purchase rate,sales rate,is addition item data required,item name,hsn code,unit,gst rate fixed or fluid,first gst rate,amount in ref of gst rate,second gst rate,
+68HD876,98,850,1100,yes,dummy item,HJ678NEJE,pcs,2,5,1000,12,
+44RTGR43,30,900,1200,,,,,,,,,
+768JSDFH87,118,550,999,yes,sample item,JJ7676HBH,pcs,1,12,,,

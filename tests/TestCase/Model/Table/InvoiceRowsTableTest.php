@@ -1,0 +1,84 @@
+<?php
+namespace App\Test\TestCase\Model\Table;
+
+use App\Model\Table\InvoiceRowsTable;
+use Cake\ORM\TableRegistry;
+use Cake\TestSuite\TestCase;
+
+/**
+ * App\Model\Table\InvoiceRowsTable Test Case
+ */
+class InvoiceRowsTableTest extends TestCase
+{
+
+    /**
+     * Test subject
+     *
+     * @var \App\Model\Table\InvoiceRowsTable
+     */
+    public $InvoiceRows;
+
+    /**
+     * Fixtures
+     *
+     * @var array
+     */
+    public $fixtures = [
+        'app.invoice_rows',
+        'app.invoices'
+    ];
+
+    /**
+     * setUp method
+     *
+     * @return void
+     */
+    public function setUp()
+    {
+        parent::setUp();
+        $config = TableRegistry::exists('InvoiceRows') ? [] : ['className' => InvoiceRowsTable::class];
+        $this->InvoiceRows = TableRegistry::get('InvoiceRows', $config);
+    }
+
+    /**
+     * tearDown method
+     *
+     * @return void
+     */
+    public function tearDown()
+    {
+        unset($this->InvoiceRows);
+
+        parent::tearDown();
+    }
+
+    /**
+     * Test initialize method
+     *
+     * @return void
+     */
+    public function testInitialize()
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test validationDefault method
+     *
+     * @return void
+     */
+    public function testValidationDefault()
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test buildRules method
+     *
+     * @return void
+     */
+    public function testBuildRules()
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+}
