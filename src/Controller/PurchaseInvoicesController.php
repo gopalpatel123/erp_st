@@ -24,6 +24,10 @@ class PurchaseInvoicesController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
+		$voucher_no=$this->request->query('voucher_no');	
+		$Grn_voucher_no=$this->request->query('Grn_voucher_no');	
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
         $this->paginate = [
             'contain' => ['Companies', 'SupplierLedgers','Grns'],
 			'limit' => 100
@@ -31,9 +35,35 @@ class PurchaseInvoicesController extends AppController
 		$item_id = $this->request->query('item_id');
 		$where1=[];
 		$where=[];
-		if(!empty($item_id)){
-			$where1['PurchaseInvoiceRows.item_id']=$item_id;
-		}
+		if(!empty($item_id))
+			{
+				$where1['PurchaseInvoiceRows.item_id']=$item_id;
+			}
+		
+		if(!empty($voucher_no))
+			{
+				$where['PurchaseInvoices.voucher_no']=$voucher_no;
+			}
+			
+		if(!empty($Grn_voucher_no))
+			{
+				$where['Grns.voucher_no']=$Grn_voucher_no;
+			}			
+		
+		 if(!empty($From))
+			{
+			  $From=date("Y-m-d",strtotime($From));
+			  $where['PurchaseInvoices.transaction_date >='] = $From;				
+			}			 
+		
+		 if(!empty($To))
+			{
+			$To=date("Y-m-d",strtotime($To));
+		    $where['PurchaseInvoices.transaction_date <='] = $To;				
+				}			 
+			
+		
+		
 		$where['PurchaseInvoices.company_id']=$company_id;
 		$where['PurchaseInvoices.financial_year_id']=$financialYear_id;
 		

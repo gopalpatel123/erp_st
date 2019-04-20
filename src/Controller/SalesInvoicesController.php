@@ -26,8 +26,13 @@ class SalesInvoicesController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
         $location_id=$this->Auth->User('session_location_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
+		$voucher_no=$this->request->query('voucher_no');
+		$party_ledger_id=$this->request->query('party_ledger_id');
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+			
 		$search=$this->request->query('search');
-		/* if(!empty($status))
+			/* if(!empty($status))
 		{
 			$where = $status;
 		}
@@ -48,8 +53,38 @@ class SalesInvoicesController extends AppController
 		if(!empty($item_id)){
 			$where1['SalesInvoiceRows.item_id']=$item_id;
 		}
+		if(!empty($voucher_no))
+			{
+				$where['SalesInvoices.voucher_no']=$voucher_no;
+			}
+			
+		if(!empty($party_ledger_id))
+			{
+			
+				$where['SalesInvoices.party_ledger_id']=$party_ledger_id;
+			
+			}
+		
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				//$where(['SalesInvoices.transaction_date >='=>$Form]);
+				$where['SalesInvoices.transaction_date >='] = $From;				
+			}
+			
+		if(!empty($To))
+			{ 
+				$To=date("Y-m-d",strtotime($To));
+				$where['SalesInvoices.transaction_date <='] = $To;
+				 
+			}
+			//pr($where); exit;
+			//pr($SalesInvoices);exit;	
+			
+		
 		$where['SalesInvoices.company_id']=$company_id;
 		$where['SalesInvoices.financial_year_id']=$financialYear_id;
+		
 		
 		$salesInvoices = $this->paginate($this->SalesInvoices->find()
 		->where($where)

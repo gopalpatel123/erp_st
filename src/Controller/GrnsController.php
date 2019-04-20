@@ -25,6 +25,10 @@ class GrnsController extends AppController
 		$search=$this->request->query('search');
 		$location_id=$this->Auth->User('session_location_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
+		$voucher_no=$this->request->query('voucher_no');	
+		$reference_no=$this->request->query('reference_no');	
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');	
 		$this->paginate = [
             'contain' => ['Companies','SupplierLedgers'],
 			'limit' => 20
@@ -33,9 +37,34 @@ class GrnsController extends AppController
 		
 		$where1=[];
 		$where=[];
-		if(!empty($item_id)){
-			$where1['GrnRows.item_id']=$item_id;
-		}
+		if(!empty($item_id))
+			{
+				$where1['GrnRows.item_id']=$item_id;
+			}
+		 if(!empty($voucher_no))
+			{
+				$where['Grns.voucher_no']=$voucher_no;
+			}
+			
+		 if(!empty($reference_no))
+			{
+			  $where['Grns.reference_no']=$reference_no;
+			}			 
+		
+		 if(!empty($From))
+			{
+			  $From=date("Y-m-d",strtotime($From));
+			  $where['Grns.transaction_date >='] = $From;				
+			}			 
+		
+		 if(!empty($To))
+			{
+			$To=date("Y-m-d",strtotime($To));
+		    $where['Grns.transaction_date <='] = $To;				
+		
+			}			 
+			
+			
 		$where['Grns.company_id']=$company_id;
 		$where['Grns.financial_year_id']=$financialYear_id;
 		

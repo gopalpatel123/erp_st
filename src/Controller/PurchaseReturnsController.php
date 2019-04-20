@@ -26,7 +26,11 @@ class PurchaseReturnsController extends AppController
 		$stateDetails=$this->Auth->User('session_company');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-         $this->paginate = [
+		$Prvoucher_no=$this->request->query('Prvoucher_no');
+		$voucher_no=$this->request->query('voucher_no');
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+		$this->paginate = [
             'contain' => ['Companies', 'PurchaseInvoices'],
 			'limit' => 100
         ];
@@ -34,11 +38,35 @@ class PurchaseReturnsController extends AppController
 		$item_id = $this->request->query('item_id');
 		$where1=[];
 		$where=[];
-		if(!empty($item_id)){
-			$where1['PurchaseReturnRows.item_id']=$item_id;
-		}
+		if(!empty($item_id))
+			{
+				$where1['purchaseReturnRows.item_id']=$item_id;
+			}
+		if(!empty($Prvoucher_no))
+			{
+				$where['PurchaseInvoices.voucher_no']=$Prvoucher_no;
+			}			
+		
+		if(!empty($voucher_no))
+			{
+				$where['PurchaseReturns.voucher_no']=$voucher_no;
+			}
+		if(!empty($From))
+			{
+			  $From=date("Y-m-d",strtotime($From));
+			  $where['PurchaseReturns.transaction_date >='] = $From;				
+			}			 
+		
+		 if(!empty($To))
+			{
+			$To=date("Y-m-d",strtotime($To));
+		    $where['PurchaseReturns.transaction_date <='] = $To;				
+				}			 
+			
+	
 		$where['PurchaseReturns.company_id']=$company_id;
 		$where['PurchaseReturns.financial_year_id']=$financialYear_id;
+			
 		
 		if(!empty($search) || !empty($item_id) ){
         $purchaseReturns = $this->paginate($this->PurchaseReturns->find()
@@ -51,7 +79,7 @@ class PurchaseReturnsController extends AppController
 		);
 		}
 		else {
-		 $purchaseReturns = $this->paginate($this->PurchaseReturns->find()->where(['PurchaseReturns.company_id'=>$company_id,'PurchaseReturns.financial_year_id'=>$financialYear_id]));	
+		 $purchaseReturns = $this->paginate($this->PurchaseReturns->find()->where($where));	
 		}
 		//pr( $purchaseReturns); exit;
 		$stockItems=$this->PurchaseReturns->PurchaseReturnRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
