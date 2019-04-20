@@ -168,7 +168,7 @@ $this->set('title', 'Create Sales Invoice');
 							</td>
 						</tr>
 						<tr>
-							<td colspan="4" >
+							<td colspan="2" >
 									<div class="radio-list" id="invoiceReceiptTd1" style="display:none">
 									 <b>Check for Receipt</b>
 										<div class="radio-inline" style="padding-left: 0px;">
@@ -176,16 +176,22 @@ $this->set('title', 'Create Sales Invoice');
 											'invoice_receipt_type',
 											[
 												['value' => 'cash', 'text' => 'Cash','class' => ''],
-												['value' => 'credit', 'text' => 'Credit','class' => '']
-											],['value'=>'cash']
+												['value' => 'credit', 'text' => 'Credit','class' => ''],
+												['value' => 'credit_cash', 'text' => 'Credit/Cash','class' => 'credit_cash']
+											]
 											); ?>
 										</div>
                                     </div>
 									<input type="hidden" id="invoiceReceiptTd2" name="invoiceReceiptTd">
 									<input type="hidden" id="receipt_amount" name="receipt_amount">
+									
 							</td>
 							
-							<td colspan="2" align="right"><b>Amt After Tax</b>
+							<td colspan="3" align="right">
+									<b>Cash Amount</b><input type="text " id="credit_cash_amt" name="credit_cash_amt" placeholder="Cash Amount" style="display:none"></br>
+									<b>Credit Amount</b><input type="text " id="credit_amt" name="credit_amt" placeholder="Credit Amount" style="display:none" readonly>
+							</td>
+							<td colspan="1" align="right"><b>Amt After Tax</b>
 							</td>
 							
 							<td colspan="2">
@@ -197,7 +203,7 @@ $this->set('title', 'Create Sales Invoice');
 				   </div>
 				  </div>
 			</div>
-				<?= $this->Form->button(__('Submit'),['class'=>'btn btn-success submit']) ?>
+				<?= $this->Form->button(__('Submit'),['class'=>'btn btn-success submit','id'=>'submitbtn']) ?>
 				<?= $this->Form->end() ?>
 		</div>
 	</div>
@@ -354,6 +360,7 @@ $this->set('title', 'Create Sales Invoice');
 			});	
 			var temp=$(this).closest('tr');
 			forward_total_amount(temp);
+			final_calculation();
 			});
 			
 			$('#barcodeFrom').die().live('submit',function(e){
@@ -420,6 +427,41 @@ $this->set('title', 'Create Sales Invoice');
 			}
 		}
 		
+		
+		$('input[type=radio][name=invoice_receipt_type]').change(function() {
+			var sel =$(this).val();
+			var amount_after_tax =$('.amount_after_tax').val();
+			//alert(amount_after_tax);
+			if(sel=='credit_cash')
+			{
+				$('#credit_cash_amt').show();
+				$('#credit_cash_amt').val(0);
+				$('#credit_amt').val(amount_after_tax);
+				$('#credit_amt').show();
+				
+			}
+			else{
+				$('#credit_cash_amt').hide();
+				$('#credit_amt').hide();
+				$('#credit_cash_amt').val(0);
+				$('#credit_amt').val(0);
+			} 
+		});
+		
+		
+		
+		$('#credit_cash_amt').die().live('keyup',function(){
+				var total =$('.amount_after_tax').val();
+				var cash =$(this).val();
+				var credit=total-cash;
+				if(cash  > total){
+					$('#credit_cash_amt').val(total);
+					$('#credit_amt').val(0);
+				}else{
+					$('#credit_amt').val(credit);
+				}
+		});
+		
 		$('.party_ledger_id').die().live('change',function(){
 			var customer_state_id=$('option:selected', this).attr('party_state_id');
 			var partyexist=$('option:selected', this).attr('partyexist');
@@ -480,7 +522,7 @@ $this->set('title', 'Create Sales Invoice');
 			rename_rows();
 			var temp=$(this).closest('tr');
 			forward_total_amount(temp);
-			//forward_total_amount();
+			final_calculation();
 		});
 		ComponentsPickers.init();
 		
@@ -502,6 +544,7 @@ $this->set('title', 'Create Sales Invoice');
 		
 		rename_rows();
 		forward_total_amount(temp);
+		//final_calculation();
 	}
 	function rename_rows()
 	{
@@ -531,10 +574,11 @@ $this->set('title', 'Create Sales Invoice');
 		});
 	}
 	
-	$('.calculation').die().live('keyup',function()
+	$('.calculation').die().live('blur',function()
 	{
 		var temp=$(this).closest('tr');
-		forward_total_amount(temp);
+		//forward_total_amount(temp);
+		final_calculation();
 	});
 	
 	
@@ -546,7 +590,8 @@ $this->set('title', 'Create Sales Invoice');
 	
 	$('.is_gst_excluded').die().live('click',function(){
 		var temp=$(this).closest('tr');
-		forward_total_amount(temp);
+		final_calculation();
+		//forward_total_amount(temp);
 	});
 	$('#demo_1').die().live('click',function(){ 
 		$('#myModal2').show();
@@ -955,6 +1000,8 @@ $this->set('title', 'Create Sales Invoice');
 	
 	function checkValidation() 
 	{  
+		$('#submitbtn').prop('disabled', true);
+		$('#submitbtn').text('Submitting.....');
 		final_calculation();
 		var amount_before_tax  = parseFloat($('.amount_before_tax').val());
 		if(!amount_before_tax || amount_before_tax==0){

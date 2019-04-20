@@ -469,10 +469,14 @@ class SalesInvoicesController extends AppController
 			
 			if($salesInvoice->invoice_receipt_type=='cash' && $salesInvoice->invoiceReceiptTd==1){
 					$salesInvoice->receipt_amount=$salesInvoice->amount_after_tax;
-			}else{
+			}else if($salesInvoice->invoice_receipt_type=='credit_cash'){
+				$salesInvoice->receipt_amount=$salesInvoice->credit_cash_amt;
+			}
+			else{
 				$salesInvoice->receipt_amount=0;
 			}
 			
+			//pr($salesInvoice); exit;
 		   if ($this->SalesInvoices->save($salesInvoice)) {
 				
 				if($salesInvoice->invoice_receipt_type=='cash' && $salesInvoice->invoiceReceiptTd==1)
@@ -604,10 +608,114 @@ class SalesInvoicesController extends AppController
 										])
 					  ->execute();
 						}
+				}else if($salesInvoice->invoice_receipt_type=='credit_cash' && $salesInvoice->credit_cash_amt > 0){
+					$receiptVoucherNo = $this->SalesInvoices->Receipts->find()->select(['voucher_no'])->where(['Receipts.company_id'=>$company_id,'Receipts.financial_year_id'=>$salesInvoice->financial_year_id])->order(['voucher_no' => 'DESC'])->first();
+						if($receiptVoucherNo)
+						{
+							$receipt_voucher_no=$receiptVoucherNo->voucher_no+1;
+						}
+						else
+						{
+							$receipt_voucher_no=1;
+						}
+						
+						$receiptData = $this->SalesInvoices->Receipts->query();
+								$receiptData->insert(['financial_year_id','voucher_no', 'company_id','transaction_date','amount','sales_invoice_id'])
+										->values([
+										'financial_year_id' => $salesInvoice->financial_year_id,
+										'voucher_no' => $receipt_voucher_no,
+										'company_id' => $salesInvoice->company_id,
+										'transaction_date' => $salesInvoice->transaction_date,
+										'amount' => $salesInvoice->credit_cash_amt,
+										'sales_invoice_id' => $salesInvoice->id])
+					  ->execute();
+					  $receiptId = $this->SalesInvoices->Receipts->find()->select(['id'])->where(['Receipts.company_id'=>$company_id,'Receipts.sales_invoice_id'=>$salesInvoice->id])->first();
+					 
+						$receiptLedgerId = $this->SalesInvoices->SalesInvoiceRows->Ledgers->find()
+						->where(['Ledgers.cash' =>'1','Ledgers.company_id'=>$company_id])->first();
+						$refLedgerId = $this->SalesInvoices->SalesInvoiceRows->Ledgers->find()
+						->where(['Ledgers.id' =>$salesInvoice->party_ledger_id,'Ledgers.company_id'=>$company_id])->first();
+					  
+					  $receiptRowData1 = $this->SalesInvoices->Receipts->ReceiptRows->query();
+								$receiptRowData1->insert(['receipt_id','company_id','cr_dr', 'ledger_id', 'credit'])
+										->values([
+										'receipt_id' => $receiptId->id,
+										'company_id' => $salesInvoice->company_id,
+										'cr_dr' => 'Cr',
+										'ledger_id' => $salesInvoice->party_ledger_id,
+										'credit' => $salesInvoice->credit_cash_amt])
+					  ->execute();
+					   $receiptRowData2 = $this->SalesInvoices->Receipts->ReceiptRows->query();
+								$receiptRowData2->insert(['receipt_id','company_id','cr_dr', 'ledger_id', 'debit'])
+										->values([
+										'receipt_id' => $receiptId->id,
+										'company_id' => $salesInvoice->company_id,
+										'cr_dr' => 'Dr',
+										'ledger_id' => $receiptLedgerId->id,
+										'debit' => $salesInvoice->credit_cash_amt])
+					  ->execute();
+					  
+					  
+					  
+					   $receiptRowCrId = $this->SalesInvoices->Receipts->ReceiptRows->find()->select(['id'])->where(['ReceiptRows.company_id'=>$company_id,'ReceiptRows.receipt_id'=>$receiptId->id, 'ReceiptRows.cr_dr'=>'Cr'])->first();
+					   $receiptRowDrId = $this->SalesInvoices->Receipts->ReceiptRows->find()->select(['id'])->where(['ReceiptRows.company_id'=>$company_id,'ReceiptRows.receipt_id'=>$receiptId->id, 'ReceiptRows.cr_dr'=>'Dr'])->first();
+					  
+					  if($refLedgerId->bill_to_bill_accounting=='yes')
+						{
+						        $refData1 = $this->SalesInvoices->Receipts->ReceiptRows->ReferenceDetails->query();
+								$refData1->insert(['company_id','ledger_id','type', 'ref_name', 'debit', 'sales_invoice_id','due_days','transaction_date'])
+										->values([
+										'company_id' => $salesInvoice->company_id,
+										'ledger_id' => $salesInvoice->party_ledger_id,
+										'type' => 'New Ref',
+										'ref_name' => $voucher_no,
+										'debit' => $salesInvoice->credit_cash_amt,
+										'sales_invoice_id' => $salesInvoice->id,
+										'due_days' => $due_days,
+										'transaction_date' => $salesInvoice->transaction_date
+										])
+					  ->execute();
+					  
+								$refData2 = $this->SalesInvoices->Receipts->ReceiptRows->ReferenceDetails->query();
+								$refData2->insert(['company_id','ledger_id','type', 'ref_name', 'credit','receipt_id','receipt_row_id','transaction_date'])
+										->values([
+										'company_id' => $salesInvoice->company_id,
+										'ledger_id' => $salesInvoice->party_ledger_id,
+										'type' => 'Against',
+										'ref_name' => $voucher_no,
+										'credit' => $salesInvoice->credit_cash_amt,
+										'receipt_id' => $receiptId->id,
+										'receipt_row_id' => $receiptRowCrId->id,
+										'transaction_date' => $salesInvoice->transaction_date
+										])
+					  ->execute();
+						}
+					 
+					//Accounting Entries for Receipt Start//
+					$accountEntry = $this->SalesInvoices->Receipts->AccountingEntries->newEntity();
+					$accountEntry->ledger_id                  = $salesInvoice->party_ledger_id;
+					$accountEntry->debit                      = 0;
+					$accountEntry->credit                     = $salesInvoice->credit_cash_amt;
+					$accountEntry->transaction_date           = $salesInvoice->transaction_date;
+					$accountEntry->company_id                 = $company_id;
+					$accountEntry->receipt_id                 = $receiptId->id;
+					$accountEntry->receipt_row_id             = 0;
+					$this->SalesInvoices->Receipts->AccountingEntries->save($accountEntry);
+					
+					$accountEntry = $this->SalesInvoices->Receipts->AccountingEntries->newEntity();
+					$accountEntry->ledger_id                  = $receiptLedgerId->id;
+					$accountEntry->debit                      = $salesInvoice->credit_cash_amt;
+					$accountEntry->credit                     = 0;
+					$accountEntry->transaction_date           = $salesInvoice->transaction_date;
+					$accountEntry->company_id                 = $company_id;
+					$accountEntry->receipt_id                 = $receiptId->id;
+					$accountEntry->receipt_row_id             = 0;
+					$this->SalesInvoices->Receipts->AccountingEntries->save($accountEntry);
+					//Accounting Entries for Receipt End//
+					
 				}
-				
-
-		       foreach($salesInvoice->sales_invoice_rows as $sales_invoice_row)
+			
+				foreach($salesInvoice->sales_invoice_rows as $sales_invoice_row)
 			   {
 			   $exactRate=$sales_invoice_row->taxable_value/$sales_invoice_row->quantity;
 					 $stockData = $this->SalesInvoices->ItemLedgers->query();

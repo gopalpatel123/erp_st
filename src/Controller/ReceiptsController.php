@@ -51,7 +51,17 @@ class ReceiptsController extends AppController
      * @return \Cake\Http\Response|void
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function thermalView($id = null)
+    {   
+		$this->viewBuilder()->layout('');
+	    $company_id=$this->Auth->User('session_company_id');
+        $receipts = $this->Receipts->find()->where(['Receipts.company_id'=>$company_id, 'Receipts.id'=>$id])
+		->contain(['Companies', 'ReceiptRows'=>['ReferenceDetails', 'Ledgers']])->first();
+		//pr($receipts); exit;
+        $this->set(compact('receipts'));
+        $this->set('_serialize', ['receipts']);
+    }
+	public function view($id = null)
     {   
 		$this->viewBuilder()->layout('index_layout');
 	    $company_id=$this->Auth->User('session_company_id');
