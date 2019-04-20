@@ -143,6 +143,59 @@ class ItemLedgersController extends AppController
         $this->set('_serialize', ['itemLedgers']);
     }
 	
+	public function brandWiseReport()
+    {
+        $this->viewBuilder()->layout('index_layout');
+		$status=$this->request->query('status');
+		$company_id=$this->Auth->User('session_company_id');		
+		if(!empty($status)){ 
+			$this->viewBuilder()->layout('excel_layout');	
+		}else{ 
+			$this->viewBuilder()->layout('index_layout');
+		}
+		
+		$from_date = $this->request->query('from_date');
+		$to_date   = $this->request->query('to_date');
+		$stock_group_id   = $this->request->query('stock_group_id');
+		$where=[];
+		if(!empty($from_date) || !empty($to_date))
+		{
+			$from_date = date("Y-m-d",strtotime($from_date));
+			$to_date   = date("Y-m-d",strtotime($to_date));
+			$where['SalesInvoices.transaction_date >=']= $from_date;
+			$where['SalesInvoices.transaction_date <='] = $to_date;
+		}
+		else
+		{ 
+			 /* $from_date = date("Y-m-d",strtotime($this->coreVariable['fyValidFrom']));
+			 $toDate    = $this->Ledgers->AccountingEntries->find()->order(['AccountingEntries.transaction_date'=>'DESC'])->First();
+			@$to_date   = date("Y-m-d",strtotime($toDate->transaction_date)); */
+		}
+		if(!empty($stock_group_id)){
+			
+		}
+		
+		$salesInvoices = $this->ItemLedgers->SalesInvoices->find()->where(['SalesInvoices.company_id'=>$company_id])->where($where)
+					->contain(['Companies', 'PartyLedgers'=>['Customers'], 'SalesLedgers', 'SalesInvoiceRows'=>
+					['GstFigures','Items'=>function($e) use($stock_group_id){
+							return $e->where(['Items.stock_group_id'=>$stock_group_id])
+							->contain(['StockGroups'=>['ParentStockGroups'],'Sizes']);
+							}]])
+					->order(['voucher_no' => 'ASC']);
+		pr($salesInvoices->toArray()); exit;
+		
+		$stockGroups = $this->ItemLedgers->Items->StockGroups->find('list');
+		$company_id=$this->Auth->User('session_company_id');
+		$url=$this->request->here();
+		$url=parse_url($url,PHP_URL_QUERY);
+        $itemLedgers =$this->ItemLedgers->find()->where(['ItemLedgers.company_id'=>$company_id,'ItemLedgers.sale_return_id >' =>0])
+		->contain(['Items','SaleReturns'=>['PartyLedgers']]);
+		//pr($itemLedgers->toArray());
+		//exit;
+        $this->set(compact('itemLedgers','status','url','from_date','to_date','stockGroups','stock_group_id'));
+        $this->set('_serialize', ['itemLedgers']);
+    }
+	
 	public function FetchData($item_id=null){
 		$company_id=$this->Auth->User('session_company_id');
 		$session_location_id =$this->Auth->User('session_location_id');

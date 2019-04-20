@@ -66,6 +66,7 @@ class ItemLedgersTable extends Table
 		'joinType' => 'INNER'
         ]);
 		
+		$this->belongsTo('SalesInvoices');
 		$this->belongsTo('Grns', [
 		'foreignKey' => 'grn_id',
 		'joinType' => 'LEFT'
