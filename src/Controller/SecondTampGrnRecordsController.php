@@ -571,9 +571,19 @@ class SecondTampGrnRecordsController extends AppController
 					$item->item_code=$SecondTampGrnRecord->item_code;
 					$data_to_encode = strtoupper($SecondTampGrnRecord->item_code);
 				}else{
-					$item_code=strtoupper(uniqid());
-					$item->item_code=$item_code;
-					$data_to_encode = $item_code;
+					
+					if($company_id==1){
+						$random_num=rand(1000000,10000000);
+						$item->item_code='SAREE'.$random_num;
+					}else if($company_id==2){
+						$random_num=rand(1000000,10000000);
+						$item->item_code='TEXTI'.$random_num;
+					}else if($company_id==3){
+						$random_num=rand(1000000,10000000);
+						$item->item_code='GARME'.$random_num;
+					}
+					$item->item_code=strtoupper($item->item_code);
+					$data_to_encode = $item->item_code;
 				}
 				
 				$item->hsn_code=$SecondTampGrnRecord->hsn_code;

@@ -104,6 +104,11 @@ class PaymentsController extends AppController
 				}
 			}
 			//transaction date for payment code close here-- 
+			$ledgerData= $this->Payments->PaymentRows->Ledgers->get($payment->payment_rows[0]->ledger_id,
+			['contain'=>['Suppliers']]
+			);
+			pr($ledgerData); exit;
+			pr($payment->payment_rows[0]->ledger_id); exit;
 			
 			if ($this->Payments->save($payment)) {
 			foreach($payment->payment_rows as $payment_row)

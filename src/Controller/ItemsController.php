@@ -107,14 +107,26 @@ class ItemsController extends AppController
 				$item->second_gst_figure_id = $first_gst_figure_id;
 				$item->gst_amount           = 0;
 			}
-			if($item->barcode_decision==1){
-				$item->item_code=strtoupper(uniqid());
+			if($item->barcode_decision==1){ 
+				if($company_id==1){
+					$random_num=rand(1000000,10000000);
+					$item->item_code='SAREE'.$random_num;
+				}else if($company_id==2){
+					$random_num=rand(1000000,10000000);
+					$item->item_code='TEXTI'.$random_num;
+				}else if($company_id==3){
+					$random_num=rand(1000000,10000000);
+					$item->item_code='GARME'.$random_num;
+				}
+				$item->item_code=strtoupper($item->item_code);
 				$data_to_encode = $item->item_code;
 			}else{
 				$item->item_code=strtoupper($item->provided_item_code);
 				$data_to_encode = strtoupper($item->provided_item_code);
 			}
 			$item->sales_rate_update_on = $this->Auth->User('session_company')->books_beginning_from;
+			//pr($item->item_code);
+			//pr($data_to_encode); exit;
             if ($this->Items->save($item))
 			{
 				$barcode = new BarcodeHelper(new \Cake\View\View());
