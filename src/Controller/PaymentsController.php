@@ -25,9 +25,34 @@ class PaymentsController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+        $voucher_no=$this->request->query('voucher_no');
+        $From=$this->request->query('To');
+        $To=$this->request->query('To');
+        
+		$this->paginate = [
             'contain' => ['Companies', 'PaymentRows'=>['Ledgers']]
         ];
+		if(!empty($voucher_no))
+			{
+				$where['Payments.voucher_no']=$voucher_no;
+			}
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['Payments.transaction_date >='] = $From;				
+			}			 
+		
+		if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['Payments.transaction_date <='] = $To;				
+			}			 
+		
+		
+		
+		
+	$where['Payments.company_id']=$company_id;
+	$where['Payments.financial_year_id']=$financialYear_id;
 		if($search){
         $payments = $this->paginate($this->Payments->find()->where(['Payments.company_id'=>$company_id,'Payments.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -37,9 +62,9 @@ class PaymentsController extends AppController
 			//...
 		 ]]));
 		} else {
-		 $payments = $this->paginate($this->Payments->find()->where(['Payments.company_id'=>$company_id,'Payments.financial_year_id'=>$financialYear_id]));
+		 $payments = $this->paginate($this->Payments->find()->where($where));
 		}
-        $this->set(compact('payments','search'));
+        $this->set(compact('payments','search','voucher_no'));
         $this->set('_serialize', ['payments']);
     }
 

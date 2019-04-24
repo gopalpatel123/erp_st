@@ -24,10 +24,44 @@ class JournalVouchersController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+        $voucher_no=$this->request->query('voucher_no');
+        $From=$this->request->query('From');
+        $To=$this->request->query('To');
+        $reference_no=$this->request->query('reference_no');
+        
+		$this->paginate = [
             'contain' => ['Companies','JournalVoucherRows'=>['Ledgers']],
 			'limit' => 100
         ];
+		if(!empty($voucher_no))
+				{
+					$where['JournalVouchers.voucher_no']=$voucher_no;
+				}
+			
+		if(!empty($From))
+				{
+					$From=date("Y-m-d",strtotime($From));
+					$where['JournalVouchers.transaction_date >='] = $From;				
+				}			 
+		
+		 if(!empty($To))
+				{
+					$To=date("Y-m-d",strtotime($To));
+					$where['JournalVouchers.transaction_date <='] = $To;				
+				}			 
+		 if(!empty($reference_no))
+			{
+					$where['JournalVouchers.reference_no']=$reference_no;
+					
+			}
+			$where['JournalVouchers.company_id']=$company_id;
+			$where['JournalVouchers.financial_year_id']=$financialYear_id;
+		if(empty($From))
+			{
+				$From=date("Y-m-d");
+				$To=date("Y-m-d");
+			
+			}
 		if($search){
         $journalVouchers = $this->paginate($this->JournalVouchers->find()->where(['JournalVouchers.company_id'=>$company_id,'JournalVouchers.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -39,9 +73,9 @@ class JournalVouchersController extends AppController
 
 		 ]]));
 		} else {
-        $journalVouchers = $this->paginate($this->JournalVouchers->find()->where(['JournalVouchers.company_id'=>$company_id,'JournalVouchers.financial_year_id'=>$financialYear_id]));
+        $journalVouchers = $this->paginate($this->JournalVouchers->find()->where($where));
 		}
-        $this->set(compact('journalVouchers','search'));
+        $this->set(compact('journalVouchers','search','voucher_no','reference_no','From','To'));
         $this->set('_serialize', ['journalVouchers']);
     }
 

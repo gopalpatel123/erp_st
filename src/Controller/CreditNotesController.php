@@ -24,10 +24,34 @@ class CreditNotesController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+        $voucher_no=$this->request->query('voucher_no');
+        $From=$this->request->query('From');
+        $To=$this->request->query('To');
+		$this->paginate = [
             'contain' => ['Companies','CreditNoteRows'=>['Ledgers']],
 			'limit' => 100
         ];
+		
+		$where['CreditNotes.company_id']=$company_id;
+		$where['CreditNotes.financial_year_id']=$financialYear_id;
+		
+		if(!empty($voucher_no))
+			{
+				$where['CreditNotes.voucher_no']=$voucher_no;	
+			}			
+		
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$Where['CreditNotes.transaction_date  >=']=$From;	
+			}
+		
+		if(!empty($TO))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['CreditNotes.transaction_date <=']=$TO;
+			}
+			
 		if($search){
         $creditNotes = $this->paginate($this->CreditNotes->find()->where(['CreditNotes.company_id'=>$company_id,'CreditNotes.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -37,9 +61,9 @@ class CreditNotesController extends AppController
 
 		}
 		else{
-		 $creditNotes = $this->paginate($this->CreditNotes->find()->where(['CreditNotes.company_id'=>$company_id,'CreditNotes.financial_year_id'=>$financialYear_id]));
+		 $creditNotes = $this->paginate($this->CreditNotes->find()->where($where));
 		}
-        $this->set(compact('creditNotes','search'));
+        $this->set(compact('creditNotes','search','voucher_no'));
         $this->set('_serialize', ['creditNotes']);
     }
 

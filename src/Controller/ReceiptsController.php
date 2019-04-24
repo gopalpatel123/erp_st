@@ -25,10 +25,39 @@ class ReceiptsController extends AppController
 	$company_id=$this->Auth->User('session_company_id');
 	$financialYear_id=$this->Auth->User('financialYear_id');
 	$search=$this->request->query('search');
-        $this->paginate = [
+	$voucher_no=$this->request->query('voucher_no');	
+	$From=$this->request->query('From');
+	$To=$this->request->query('To');
+	 $this->paginate = [
             'contain' => ['Companies','ReceiptRows'=>['Ledgers']],
 			'limit' => 100
         ];
+		if(!empty($voucher_no))
+			{
+			$where['Receipts.voucher_no']=$voucher_no;	
+			}
+		
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['Receipts.transaction_date >='] = $From;				
+			}			 
+		
+		 if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['Receipts.transaction_date <='] = $To;				
+			}			 
+			
+		/* if(empty($From))
+			{
+				$From=date("Y-m-d");
+				$To=date("Y-m-d");
+			
+			}			
+		 */
+		$where['Receipts.company_id']=$company_id;
+		$where['Receipts.financial_year_id']=$financialYear_id;
 		if($search){
         $receipts = $this->paginate($this->Receipts->find()->where(['Receipts.company_id'=>$company_id,'Receipts.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -38,9 +67,9 @@ class ReceiptsController extends AppController
 			//...
 		 ]]));
 		}else{
-		  $receipts = $this->paginate($this->Receipts->find()->where(['Receipts.company_id'=>$company_id,'Receipts.financial_year_id'=>$financialYear_id]));	
+		  $receipts = $this->paginate($this->Receipts->find()->where($where));	
 		}
-        $this->set(compact('receipts','search'));
+        $this->set(compact('receipts','search','voucher_no'));
         $this->set('_serialize', ['receipts']);
     }
 

@@ -42,6 +42,7 @@ class PurchaseReturnsController extends AppController
 			{
 				$where1['purchaseReturnRows.item_id']=$item_id;
 			}
+			
 		if(!empty($Prvoucher_no))
 			{
 				$where['PurchaseInvoices.voucher_no']=$Prvoucher_no;
@@ -53,17 +54,16 @@ class PurchaseReturnsController extends AppController
 			}
 		if(!empty($From))
 			{
-			  $From=date("Y-m-d",strtotime($From));
-			  $where['PurchaseReturns.transaction_date >='] = $From;				
+				$From=date("Y-m-d",strtotime($From));
+				$where['PurchaseReturns.transaction_date >='] = $From;				
 			}			 
 		
 		 if(!empty($To))
 			{
-			$To=date("Y-m-d",strtotime($To));
-		    $where['PurchaseReturns.transaction_date <='] = $To;				
-				}			 
+				$To=date("Y-m-d",strtotime($To));
+				$where['PurchaseReturns.transaction_date <='] = $To;				
+			}			 
 			
-	
 		$where['PurchaseReturns.company_id']=$company_id;
 		$where['PurchaseReturns.financial_year_id']=$financialYear_id;
 			
@@ -83,7 +83,7 @@ class PurchaseReturnsController extends AppController
 		}
 		//pr( $purchaseReturns); exit;
 		$stockItems=$this->PurchaseReturns->PurchaseReturnRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
-        $this->set(compact('purchaseReturns','search','stockItems','item_id'));
+        $this->set(compact('purchaseReturns','search','stockItems','item_id','voucher_no','voucher_no'));
         $this->set('_serialize', ['purchaseReturns']);
     }
 

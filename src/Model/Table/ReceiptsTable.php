@@ -92,7 +92,9 @@ class ReceiptsTable extends Table
 		{
 			@$data['transaction_date'] = trim(date('Y-m-d',strtotime(@$data['transaction_date'])));
 		}
-    }
+		
+	}
+	
     /**
      * Returns a rules checker object that will be used for validating
      * application integrity.

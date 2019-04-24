@@ -27,7 +27,6 @@ class SalesInvoicesController extends AppController
         $location_id=$this->Auth->User('session_location_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$voucher_no=$this->request->query('voucher_no');
-		$party_ledger_id=$this->request->query('party_ledger_id');
 		$From=$this->request->query('From');
 		$To=$this->request->query('To');
 			
@@ -58,12 +57,6 @@ class SalesInvoicesController extends AppController
 				$where['SalesInvoices.voucher_no']=$voucher_no;
 			}
 			
-		if(!empty($party_ledger_id))
-			{
-			
-				$where['SalesInvoices.party_ledger_id']=$party_ledger_id;
-			
-			}
 		
 		if(!empty($From))
 			{
@@ -106,13 +99,13 @@ class SalesInvoicesController extends AppController
 			'SalesInvoices.amount_after_tax' => $search
         ]])->group(['SalesInvoices.id'])->order(['voucher_no' => 'DESC'])); 
 		$stockItems=$this->SalesInvoices->SalesInvoiceRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
-        $this->set(compact('salesInvoices','search','status','location_id','stockItems','item_id'));
+		$this->set(compact('salesInvoices','search','status','location_id','stockItems','item_id','voucher_no'));
         $this->set('_serialize', ['salesInvoices']);
     } 
 
 	public function invoiceReport($status = Null)
     {
-		$status=$this->request->query('status'); 
+		$status=$this->request->query('status');
 		$url=$this->request->here();
 		$url=parse_url($url,PHP_URL_QUERY);
 		//$this->viewBuilder()->layout('index_layout');

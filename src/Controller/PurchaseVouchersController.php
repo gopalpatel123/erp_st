@@ -24,11 +24,43 @@ class PurchaseVouchersController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
+		$voucher_no=$this->request->query('voucher_no');
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+		$supplier_invoice_no=$this->request->query('supplier_invoice_no');
+		$name=$this->request->query('name');
+		
 		$this->paginate = [
             'contain' => ['PurchaseVoucherRows'=>'Ledgers'],
 			'limit' => 100
         ];
-        $purchaseVouchers = $this->paginate($this->PurchaseVouchers->find()->where(['PurchaseVouchers.company_id'=>$company_id,'PurchaseVouchers.financial_year_id'=>$financialYear_id])->where([
+			if(!empty($voucher_no))
+			 {
+				$where['PurchaseVouchers.voucher_no']=$voucher_no;	
+			 }
+			 
+			 if(!empty($From))
+			 {
+				  $From=date("Y-m-d",strtotime($From));
+			      $where['PurchaseVouchers.transaction_date >='] = $From;				
+			 }			 
+		
+			if(!empty($To))
+			 {
+				  $To=date("Y-m-d",strtotime($To));
+				  $where['PurchaseVouchers.transaction_date <='] = $To;				
+		     }			 
+			if(!empty($supplier_invoice_no))
+			 {
+				$where['PurchaseVouchers.supplier_invoice_no']=$supplier_invoice_no;	
+			 }
+			
+			 	
+			 
+			 
+			 //$where['PurchaseVouchers.company_id']=$company_id;
+			 $where['PurchaseVouchers.financial_year_id']=$financialYear_id;
+				$purchaseVouchers = $this->paginate($this->PurchaseVouchers->find()->where($where)->where([
 		'OR' => [
             'PurchaseVouchers.voucher_no' => $search,
             //....
@@ -40,7 +72,7 @@ class PurchaseVouchersController extends AppController
 		 ]]));
 		//pr($purchaseVouchers)->toArray();
 		//exit;
-        $this->set(compact('purchaseVouchers','search'));
+        $this->set(compact('purchaseVouchers','search','voucher_no','supplier_invoice_no'));
         $this->set('_serialize', ['purchaseVouchers']);
     }
 

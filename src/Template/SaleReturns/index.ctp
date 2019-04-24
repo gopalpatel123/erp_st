@@ -16,21 +16,24 @@ $this->set('title', 'Sales Invoice List');
 				<div class="actions">
 				<form method="GET" id="">
 					<div class="row">
-						<div class="col-md-2">
+						<!--<div class="col-md-2">
 							<div class='form-group'>
 							<?php echo $this->Form->input('search',['class'=>'form-control','label'=>false, 'placeholder'=>'Search','autofocus'=>'autofocus','value'=>@$search]);
 							?>
 							</div>
 						</div>
+					-->	
 						<div class='col-md-2'>
-								<?php echo $this->Form->input('sales_invoice_no',['class'=>'form-control','label'=>false, 'placeholder'=>'SalesInvoice.No','value'=> @$sales_invoice_no]);
-								?>
+								<div class='form-group'>
 							
+								<?php echo $this->Form->input('sales_invoice_no',['class'=>'form-control','label'=>false, 'placeholder'=>'Sales Invoice.No','autofocus'=>'autofocus','value'=>@$sales_invoice_no]);
+								?>
+							</div>
 						</div>
 						
 						
 						<div class='col-md-2'>
-								<?php echo $this->Form->input('voucher_no',['class'=>'form-control','label'=>false, 'placeholder'=>'Voucher.No','value'=> @$voucher_no]);
+								<?php echo $this->Form->input('voucher_no',['class'=>'form-control','label'=>false, 'placeholder'=>'Voucher.No','autofocus'=>'autofocus','value'=> @$voucher_no]);
 								?>
 							
 						</div>
@@ -38,14 +41,14 @@ $this->set('title', 'Sales Invoice List');
 						
 						<div class="col-md-2">
 								<div class="form-group">
-									<?= $this->Form->control('From',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'Form']);?>
+									<?= $this->Form->control('From',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'From']);?>
 									<span class="help-block"></span>
 								</div>
 							</div>
 						
 						<div class="col-md-2">
 							<div class="form-group">
-								 <?= $this->Form->control('To',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
+								 <?= $this->Form->control('To',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
 								<span class="help-block"></span>
 							</div>
 						</div>
@@ -188,7 +191,7 @@ $this->set('title', 'Sales Invoice List');
 	<?php echo $this->Html->script('/assets/admin/layout/scripts/quick-sidebar.js', ['block' => 'PAGE_LEVEL_SCRIPTS_JS']); ?>
 	<?php echo $this->Html->script('/assets/admin/layout/scripts/demo.js', ['block' => 'PAGE_LEVEL_SCRIPTS_JS']); ?>
 	<?php echo $this->Html->script('/assets/admin/pages/scripts/components-dropdowns.js', ['block' => 'PAGE_LEVEL_SCRIPTS_JS']); ?>
-<?php
+	<?php
 	$js="
 		$(document).ready(function() {
 			ComponentsPickers.init();

@@ -35,13 +35,13 @@ $this->set('title', 'Purchase Return List');
 							</div>
 							<div class='col-md-2'>
 								<div class="form-group">
-									<?= $this->Form->control('From',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'Form']);?>
+									<?= $this->Form->control('From',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'From']);?>
 									<span class="help-block"></span>
 								</div>
 							</div>
 							<div class="col-md-2">
 								<div class="form-group">
-									<?= $this->Form->control('To',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
+									<?= $this->Form->control('To',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
 									<span class="help-block"></span>
 								</div>
 							</div>

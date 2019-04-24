@@ -26,20 +26,52 @@ class IntraLocationStockTransferVouchersController extends AppController
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
 		$this->viewBuilder()->layout('index_layout');
+		$voucher_no=$this->request->query('voucher_no');		
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+		
+		
+		if(!empty($voucher_no))
+		{
+			$where['IntraLocationStockTransferVouchers.voucher_no']=$voucher_no;
+		}	
+		
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['IntraLocationStockTransferVouchers.transaction_date >='] = $From;				
+			}			 
+		
+		if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['IntraLocationStockTransferVouchers.transaction_date <='] = $To;				
+				//pr($where);exit;
+			}
+	
+	
+		$where['IntraLocationStockTransferVouchers.company_id']=$company_id;
+		$where['IntraLocationStockTransferVouchers.financial_year_id']=$financialYear_id;
+		
+		
 		if(!empty($status))
 		{
-			$where = $status;
+			$where['IntraLocationStockTransferVouchers.status']=$status; 
 		}
+	
+	
 		else
 		{
-			$where = 'pending';
-		}
-		
-        $this->paginate = [
+			$where['IntraLocationStockTransferVouchers.status']='pending';
+			//$where='pending';
+
+		} //pr($where); exit;
+		$this->paginate = [
             'contain' => ['TransferFromLocations','TransferToLocations'],
 			'limit' => 100
         ];
-		$intraLocationStockTransferVouchers = $this->paginate($this->IntraLocationStockTransferVouchers->find()->where(['IntraLocationStockTransferVouchers.company_id'=>$company_id,'IntraLocationStockTransferVouchers.financial_year_id'=>$financialYear_id,'IntraLocationStockTransferVouchers.status'=>@$where])->where([
+		
+		$intraLocationStockTransferVouchers = $this->paginate($this->IntraLocationStockTransferVouchers->find()->where($where)->where([
 		'OR' => [
             'IntraLocationStockTransferVouchers.voucher_no' => $search,
             // ...
@@ -47,7 +79,8 @@ class IntraLocationStockTransferVouchersController extends AppController
 			//...
 			'IntraLocationStockTransferVouchers.transaction_date ' => date('Y-m-d',strtotime($search))
 		 ]]));
-		$this->set(compact('intraLocationStockTransferVouchers','status','location_id','search'));
+		 
+		$this->set(compact('intraLocationStockTransferVouchers','status','location_id','search','voucher_no'));
         $this->set('_serialize', ['intraLocationStockTransferVouchers']);
     }
 

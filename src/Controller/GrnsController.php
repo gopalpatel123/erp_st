@@ -120,10 +120,11 @@ class GrnsController extends AppController
 				}
 			}
 			
-		}  
+		}
+				
 		//pr($grnToBeCreateVoucher); exit;
 		$stockItems=$this->Grns->GrnRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
-        $this->set(compact('grns','search','grnToBeCreateVoucher','stockItems','item_id'));
+        $this->set(compact('grns','search','grnToBeCreateVoucher','stockItems','item_id','voucher_no','reference_no'));
         $this->set('_serialize', ['grns']);
     }
 

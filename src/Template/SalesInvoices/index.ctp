@@ -22,24 +22,24 @@ $this->set('title', 'Sales Invoice List');
 							</div>
 						</div>
 						<div class='col-md-2'>
-								<?php echo $this->Form->input('voucher no',['class'=>'form-control','label'=>false, 'placeholder'=>'voucher_no','value'=> @$voucher_no]);
+								<?php echo $this->Form->input('voucher_no',['class'=>'form-control','label'=>false, 'placeholder'=>'Voucher.No','value'=> @$voucher_no]);
 								?>
 							
 						</div>
-						<div class='col-md-2'>
+						<!--<div class='col-md-2'>
 							<?php echo $this->Form->input('party_ledger_id1',['class'=>'form-control','label'=>false, 'placeholder'=>'party_ledger','value'=> @$party_ledger_id]);
 							?>
-						</div>
+						</div>-->
 						<div class="col-md-2">
 								<div class="form-group">
-									<?= $this->Form->control('From',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'Form']);?>
+									<?= $this->Form->control('From',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'From']);?>
 									<span class="help-block"></span>
 								</div>
 							</div>
 						
 						<div class="col-md-2">
 							<div class="form-group">
-								 <?= $this->Form->control('To',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
+								 <?= $this->Form->control('To',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
 								<span class="help-block"></span>
 							</div>
 						</div>

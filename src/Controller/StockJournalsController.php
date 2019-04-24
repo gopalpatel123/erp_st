@@ -24,11 +24,48 @@ class StockJournalsController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
+		$voucher_no=$this->request->query('voucher_no');
+		$reference_no=$this->request->query('reference_no');
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+		
+		if(!empty($voucher_no))
+		{
+			$where['StockJournals.voucher_no']=$voucher_no;	
+		}			
+		
+		if(!empty($reference_no))
+		{
+			$where['StockJournals.reference_no']=$reference_no;	
+		}			
+		
+		if(!empty($From))
+		{
+			$From=date("Y-m-d",strtotime($From));	
+			$where['StockJournals.transaction_date >=']=$From;	
+	
+		}
+		
+		if(!empty($To))
+		{
+			$To=date("Y-m-d",strtotime($To));
+			$where['StockJournals.transaction_date <=']=$To;	
+		
+		}			
+		
+		if(empty($From))
+		{
+			$From=date("Y-m-d");
+			$To=date("Y-m-d");
+			
+		}
+		
 		$this->paginate = [
             'contain' => ['Companies'],
 			'limit' => 100
         ];
-        $stockJournals = $this->paginate($this->StockJournals->find()->where(['StockJournals.company_id'=>$company_id,'StockJournals.financial_year_id'=>$financialYear_id])->where([
+		$where['StockJournals.company_id']=$company_id;
+		$stockJournals = $this->paginate($this->StockJournals->find()->where($where)->where([
 		'OR' => [
             'StockJournals.voucher_no' => $search,
             // ...
@@ -37,7 +74,7 @@ class StockJournalsController extends AppController
 			'StockJournals.transaction_date ' => date('Y-m-d',strtotime($search))
 		 ]]));
 
-        $this->set(compact('stockJournals','search'));
+        $this->set(compact('stockJournals','search','voucher_no','reference_no','From','To'));
         $this->set('_serialize', ['stockJournals']);
     }
 
