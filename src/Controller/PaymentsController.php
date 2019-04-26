@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Mailer\Email;
 
 /**
  * Payments Controller
@@ -25,9 +26,34 @@ class PaymentsController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+        $voucher_no=$this->request->query('voucher_no');
+        $From=$this->request->query('To');
+        $To=$this->request->query('To');
+        
+		$this->paginate = [
             'contain' => ['Companies', 'PaymentRows'=>['Ledgers']]
         ];
+		if(!empty($voucher_no))
+			{
+				$where['Payments.voucher_no']=$voucher_no;
+			}
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['Payments.transaction_date >='] = $From;				
+			}			 
+		
+		if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['Payments.transaction_date <='] = $To;				
+			}			 
+		
+		
+		
+		
+	$where['Payments.company_id']=$company_id;
+	$where['Payments.financial_year_id']=$financialYear_id;
 		if($search){
         $payments = $this->paginate($this->Payments->find()->where(['Payments.company_id'=>$company_id,'Payments.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -37,9 +63,9 @@ class PaymentsController extends AppController
 			//...
 		 ]]));
 		} else {
-		 $payments = $this->paginate($this->Payments->find()->where(['Payments.company_id'=>$company_id,'Payments.financial_year_id'=>$financialYear_id]));
+		 $payments = $this->paginate($this->Payments->find()->where($where));
 		}
-        $this->set(compact('payments','search'));
+        $this->set(compact('payments','search','voucher_no'));
         $this->set('_serialize', ['payments']);
     }
 
@@ -104,11 +130,10 @@ class PaymentsController extends AppController
 				}
 			}
 			//transaction date for payment code close here-- 
-			$ledgerData= $this->Payments->PaymentRows->Ledgers->get($payment->payment_rows[0]->ledger_id,
-			['contain'=>['Suppliers']]
-			);
-			pr($ledgerData); exit;
-			pr($payment->payment_rows[0]->ledger_id); exit;
+			
+			
+			
+			
 			
 			if ($this->Payments->save($payment)) {
 			foreach($payment->payment_rows as $payment_row)
@@ -123,6 +148,26 @@ class PaymentsController extends AppController
 					$accountEntry->payment_row_id             = $payment_row->id;
 					$this->Payments->AccountingEntries->save($accountEntry);
 				}
+				//Email Send
+				/* $ledgerData= $this->Payments->PaymentRows->Ledgers->get($payment->payment_rows[0]->ledger_id,
+					['contain'=>['Suppliers','Companies']]
+					);
+					$email = new Email('default');
+					$email->transport('gmail');
+					$email_to=$ledgerData->supplier->email;
+					$from_name="Sunil Textile";
+					$sub="Payment advice - Sunil Textile";
+					$paymentData= $payment->payment_rows[0];
+					$email->from(['gopal@phppoets.in' => $from_name])
+					->to($email_to)
+					->replyTo('gopal@phppoets.in')
+					->subject($sub)
+					->template('send_payment_voucher')
+					->emailFormat('html')
+					->viewVars(['payment'=>$paymentData,'member_name'=>$ledgerData->supplier->name,'company'=>$ledgerData->company->name,'transaction_date'=>$payment->transaction_date]);  
+					$email->send();  */
+				//
+				
 				$this->Flash->success(__('The payment has been saved.'));
 
 				return $this->redirect(['action' => 'add']);

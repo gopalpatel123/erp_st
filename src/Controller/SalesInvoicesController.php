@@ -27,7 +27,6 @@ class SalesInvoicesController extends AppController
         $location_id=$this->Auth->User('session_location_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$voucher_no=$this->request->query('voucher_no');
-		$party_ledger_id=$this->request->query('party_ledger_id');
 		$From=$this->request->query('From');
 		$To=$this->request->query('To');
 			
@@ -58,12 +57,6 @@ class SalesInvoicesController extends AppController
 				$where['SalesInvoices.voucher_no']=$voucher_no;
 			}
 			
-		if(!empty($party_ledger_id))
-			{
-			
-				$where['SalesInvoices.party_ledger_id']=$party_ledger_id;
-			
-			}
 		
 		if(!empty($From))
 			{
@@ -106,13 +99,13 @@ class SalesInvoicesController extends AppController
 			'SalesInvoices.amount_after_tax' => $search
         ]])->group(['SalesInvoices.id'])->order(['voucher_no' => 'DESC'])); 
 		$stockItems=$this->SalesInvoices->SalesInvoiceRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
-        $this->set(compact('salesInvoices','search','status','location_id','stockItems','item_id'));
+		$this->set(compact('salesInvoices','search','status','location_id','stockItems','item_id','voucher_no'));
         $this->set('_serialize', ['salesInvoices']);
     } 
 
 	public function invoiceReport($status = Null)
     {
-		$status=$this->request->query('status'); 
+		$status=$this->request->query('status');
 		$url=$this->request->here();
 		$url=parse_url($url,PHP_URL_QUERY);
 		//$this->viewBuilder()->layout('index_layout');
@@ -138,6 +131,56 @@ class SalesInvoicesController extends AppController
     }
 	
 	public function reportFilter()
+    {
+		$this->viewBuilder()->layout('index_layout');
+		$company_id=$this->Auth->User('session_company_id');
+		
+		@$partyParentGroups = $this->SalesInvoices->SalesInvoiceRows->Ledgers->AccountingGroups->find()
+						->where(['AccountingGroups.company_id'=>$company_id, 'AccountingGroups.sale_invoice_party'=>'1']);
+		$partyGroups=[];
+		
+		foreach($partyParentGroups as $partyParentGroup)
+		{
+			$accountingGroups = $this->SalesInvoices->SalesInvoiceRows->Ledgers->AccountingGroups
+			->find('children', ['for' => $partyParentGroup->id])->toArray();
+			$partyGroups[]=$partyParentGroup->id;
+			foreach($accountingGroups as $accountingGroup){
+				$partyGroups[]=$accountingGroup->id;
+			}
+		}
+	
+		if($partyGroups)
+		{  
+			$Partyledgers = $this->SalesInvoices->SalesInvoiceRows->Ledgers->find()
+							->where(['Ledgers.accounting_group_id IN' =>$partyGroups,'Ledgers.company_id'=>$company_id])
+							->contain(['Customers']);
+        }
+		
+		
+		$partyOptions=[];
+		foreach($Partyledgers as $Partyledger){
+		
+		$receiptAccountLedgers = $this->SalesInvoices->SalesInvoiceRows->Ledgers->AccountingGroups->find()
+		->where(['AccountingGroups.id'=>$Partyledger->accounting_group_id,'AccountingGroups.customer'=>1])
+		->orWhere(['AccountingGroups.id'=>$Partyledger->accounting_group_id,'AccountingGroups.supplier'=>1])->first();
+		
+		if($receiptAccountLedgers)
+		{
+			$receiptAccountLedgersName='1';
+		}
+		else{
+			$receiptAccountLedgersName='0';
+		}
+			$partyOptions[]=['text' =>str_pad(@$Partyledger->customer->customer_id, 4, '0', STR_PAD_LEFT).' - '.$Partyledger->name, 'value' => $Partyledger->id ,'party_state_id'=>@$Partyledger->customer->state_id, 'partyexist'=>$receiptAccountLedgersName, 'billToBillAccounting'=>$Partyledger->bill_to_bill_accounting];
+		}
+		
+		$StockGroups = $this->SalesInvoices->SalesInvoiceRows->Items->StockGroups->find('list')
+							->where(['StockGroups.parent_id IS NOT NULL','StockGroups.company_id'=>$company_id]);
+		
+		$this->set(compact('partyOptions','StockGroups'));
+    }
+	
+	public function dayBookFilter()
     {
 		$this->viewBuilder()->layout('index_layout');
 		$company_id=$this->Auth->User('session_company_id');
@@ -295,6 +338,159 @@ class SalesInvoicesController extends AppController
 		$this->set(compact('companies','SalesInvoices', 'from', 'to','party_ids','invoice_no','url','status'));
         $this->set('_serialize', ['salesInvoices']);
     }
+	
+		
+	public function dayBook($id=null)
+    {
+		$status=$this->request->query('status'); 
+		
+		$this->viewBuilder()->layout('');
+
+		
+		$company_id=$this->Auth->User('session_company_id');
+		$url=$this->request->here();
+		$url=parse_url($url,PHP_URL_QUERY);
+	    $from=$this->request->query('from_date');
+		$to=$this->request->query('to_date');
+		
+		$where=[];
+		$where1=[];
+		if(!empty($from)){ 
+			$from_date=date('Y-m-d', strtotime($from));
+		$where['SalesInvoices.transaction_date >=']= $from_date;
+		}
+		if(!empty($to)){
+			$to_date=date('Y-m-d', strtotime($to));
+			$where['SalesInvoices.transaction_date <='] = $to_date;
+		}
+		$party_ids=$this->request->query('party_ledger_id');
+		if(!empty($party_ids)){
+		$where['SalesInvoices.party_ledger_id IN'] = $party_ids;
+		}
+		
+		$stock_group_id=$this->request->query('Stock_group_id');
+		if(!empty($stock_group_id)){
+		//$where['SalesInvoices.SalesInvoiceRows.Items.stock_group_id'] = $stock_group_id;
+		}
+		
+		$invoice_no=$this->request->query('invoice_no');
+		if(!empty($invoice_no)){
+		$invoices_explode_commas=explode(',',$invoice_no);
+		
+		if($invoices_explode_commas){
+			$invoice_ids=[];
+			foreach($invoices_explode_commas as $invoices_explode_comma)
+			{
+				@$invoices_explode_dashs=explode('-',$invoices_explode_comma);
+				
+				$size=sizeOf($invoices_explode_dashs);
+				if($size==2){
+					$var1=$invoices_explode_dashs[0];
+					$var2=$invoices_explode_dashs[1];
+					for($i=$var1; $i<= $var2; $i++){
+						$invoice_ids[]=$i;
+					}
+				}else{
+					$invoice_ids[]=$invoices_explode_dashs[0];
+				}
+			}
+		}
+		$where1['SalesInvoices.voucher_no IN'] = $invoice_ids;
+		$where1['SalesInvoices.company_id'] = $company_id;
+		}
+		if(!empty($where)){
+			if($stock_group_id){
+					$salesInvoices = $this->SalesInvoices->find()->where(['SalesInvoices.company_id'=>$company_id])->where($where)->orWhere($where1)
+					->contain(['Companies', 'PartyLedgers'=>['Customers'], 'SalesLedgers', 'SalesInvoiceRows'=>['GstFigures','Items'=>function($e) use($stock_group_id){
+							return $e->where(['Items.stock_group_id'=>$stock_group_id])
+							->contain(['StockGroups'=>['ParentStockGroups'],'Sizes']);
+							}]])
+					->order(['voucher_no' => 'ASC']);
+				}else{
+					$salesInvoices = $this->SalesInvoices->find()->where(['SalesInvoices.company_id'=>$company_id])->where($where)->orWhere($where1)
+					->contain(['Companies', 'PartyLedgers'=>['Customers'], 'SalesLedgers', 'SalesInvoiceRows'=>['GstFigures','Items'=>['StockGroups'=>['ParentStockGroups'],'Sizes']]])
+					->order(['voucher_no' => 'ASC']);
+				}
+			}else{
+			if($stock_group_id){
+					$salesInvoices = $this->SalesInvoices->find()->where(['SalesInvoices.company_id'=>$company_id])->where($where1)
+					->contain(['Companies', 'PartyLedgers'=>['Customers'], 'SalesLedgers', 'SalesInvoiceRows'=>
+					['GstFigures','Items'=>function($e) use($stock_group_id){
+							return $e->where(['Items.stock_group_id'=>$stock_group_id])
+							->contain(['StockGroups'=>['ParentStockGroups'],'Sizes']);
+							}]])
+					->order(['voucher_no' => 'ASC']);
+			}else{
+					$salesInvoices = $this->SalesInvoices->find()->where(['SalesInvoices.company_id'=>$company_id])->where($where1)
+					->contain(['Companies', 'PartyLedgers'=>['Customers'], 'SalesLedgers', 'SalesInvoiceRows'=>
+					['GstFigures','Items'=>['StockGroups'=>['ParentStockGroups'],'Sizes']]])
+					->order(['voucher_no' => 'ASC']);
+			}
+		
+		}
+		
+		
+		//pr($salesInvoices->toArray()); exit;
+		$i=0; 
+		$saleType=[]; 
+		$brandWise=[]; 
+		foreach($salesInvoices as $salesInvoice){ 
+			 if(@$salesInvoice->invoice_receipt_type=="credit_cash"){ 
+				@$saleType['cash']+=@$salesInvoice->receipt_amount;
+				@$saleType['credit']+=@$salesInvoice->amount_after_tax-@$salesInvoice->receipt_amount;
+			}else{
+				@$saleType[@$salesInvoice->invoice_receipt_type]+=@$salesInvoice->amount_after_tax;
+			} 
+			//@$saleType[@$salesInvoice->invoice_receipt_type]+=@$salesInvoice->amount_after_tax;
+			
+			foreach($salesInvoice->sales_invoice_rows as $sales_invoice_row){ 
+				@$brandWise[$sales_invoice_row->item->stock_group_id]+=$sales_invoice_row->net_amount;
+				//$i++;
+			}
+		}
+		$AllStockGroup=$this->SalesInvoices->SalesInvoiceRows->Items->stockGroups->find('list')->toArray();
+		
+		//
+		$AccountingGroups=$this->SalesInvoices->SalesInvoiceRows->Ledgers->AccountingGroups->find()
+		->where(['AccountingGroups.nature_of_group_id IN'=>[4],'AccountingGroups.company_id'=>$company_id]);
+		
+		$Groups=[];
+		foreach($AccountingGroups as $AccountingGroup){
+			$Groups[$AccountingGroup->id]['ids'][]=$AccountingGroup->id;
+			$Groups[$AccountingGroup->id]['name']=$AccountingGroup->name;
+			$accountingChildGroups = $this->SalesInvoices->SalesInvoiceRows->Ledgers->AccountingGroups->find('children', ['for' => $AccountingGroup->id]);
+			foreach($accountingChildGroups as $accountingChildGroup){
+				$Groups[$AccountingGroup->id]['ids'][]=$accountingChildGroup->id;
+			}
+		}
+		$AllGroups=[];
+		foreach($Groups as $mainGroups){
+			foreach($mainGroups['ids'] as $subGroup){
+				$AllGroups[]=$subGroup;
+			}
+		}
+		
+		$query=$this->SalesInvoices->AccountingEntries->find();
+		$query->select(['ledger_id','totalDebit' => $query->func()->sum('AccountingEntries.debit'),'totalCredit' => $query->func()->sum('AccountingEntries.credit')])
+				//->group('AccountingEntries.ledger_id')
+				->where(['AccountingEntries.company_id'=>$company_id,'AccountingEntries.transaction_date >='=>$from_date, 'AccountingEntries.transaction_date <='=>$to_date])
+				->contain(['Ledgers'=>function($q){
+					return $q->select(['Ledgers.accounting_group_id','Ledgers.id','Ledgers.name']);
+				}]);
+		$query->matching('Ledgers', function ($q) use($AllGroups){
+			return $q->where(['Ledgers.accounting_group_id IN' => $AllGroups]);
+		});
+		
+		$expenseData=$query->first();
+		//pr($expenseData); exit;
+		
+		//pr($AllStockGroup);exit;
+		
+		$companies=$this->SalesInvoices->Companies->find()->contain(['States'])->where(['Companies.id'=>$company_id])->first();
+		$this->set(compact('companies','SalesInvoices', 'from', 'to','party_ids','invoice_no','url','status','saleType','brandWise','AllStockGroup','expenseData','Groups'));
+        $this->set('_serialize', ['salesInvoices']);
+    }
+	
     /**
      * View method
      *

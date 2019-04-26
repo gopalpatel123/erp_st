@@ -84,9 +84,10 @@ class PurchaseInvoicesController extends AppController
 			//...
 			'PurchaseInvoices.transaction_date ' => date('Y-m-d',strtotime($search))
 		 ]])->group(['PurchaseInvoices.id'])->order(['Grns.id'=>'DESC']));
+		
 		//pr($purchaseInvoices); exit;
 		$stockItems=$this->PurchaseInvoices->PurchaseInvoiceRows->Items->find('list')->where(['Items.company_id'=>$company_id]);
-        $this->set(compact('purchaseInvoices','search','stockItems','item_id'));
+        $this->set(compact('purchaseInvoices','search','stockItems','item_id','voucher_no','voucher_no'));
         $this->set('_serialize', ['purchaseInvoices']);
     }
 

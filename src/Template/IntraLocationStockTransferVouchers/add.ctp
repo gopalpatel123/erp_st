@@ -201,7 +201,7 @@ $this->set('title', 'Create Inter Location stock Transfer Voucher');
 					var mainStock=fetch.mainStock;
 					itemQ.find('.itemQty').html(text);
 					itemQ.find('.totStock').val(mainStock);
-					itemQ.find('.quantity').val(mainStock);
+					//itemQ.find('.quantity').val(mainStock);
 					if(type=='true')
 					{
 						itemQ.find('.outStock').val(1);

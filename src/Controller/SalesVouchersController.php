@@ -23,11 +23,41 @@ class SalesVouchersController extends AppController
 		$this->viewBuilder()->layout('index_layout');
 		$company_id=$this->Auth->User('session_company_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+        $voucher_no=$this->request->query('voucher_no');
+        $From=$this->request->query('From');
+		$To=$this->request->query('To');
+		$reference_no=$this->request->query('reference_no');
+		
+		$this->paginate = [
             'contain' => ['Companies','SalesVoucherRows'=>'Ledgers'],
 			'limit' => 100
         ];
-        $salesVouchers = $this->paginate($this->SalesVouchers->find()->where(['SalesVouchers.company_id'=>$company_id])->where([
+		
+		if(!empty($voucher_no))
+			{
+				$where['SalesVouchers.voucher_no']=$voucher_no;
+			}
+		
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$Where['SalesVouchers.transaction_date']=$From;
+			}			
+		
+		if(!empty($To))
+			{
+			    $To=date("Y-m-d",strtotime($To));
+			    $where['SalesVouchers.transaction_date']=$To;
+			}
+			
+		if(!empty($reference_no))	
+			{
+				$where['SalesVouchers.reference_no']=$reference_no;
+			}
+			
+			
+		$where['SalesVouchers.company_id']=$company_id;
+        $salesVouchers = $this->paginate($this->SalesVouchers->find()->where($where)->where([
 		'OR' => [
             'SalesVouchers.voucher_no' => $search,
             //....
@@ -38,7 +68,7 @@ class SalesVouchersController extends AppController
 		// pr($salesVouchers->toArray());
 		 //exit;
 
-        $this->set(compact('salesVouchers','search'));
+        $this->set(compact('salesVouchers','search','voucher_no','reference_no'));
         $this->set('_serialize', ['salesVouchers']);
     }
 

@@ -24,10 +24,35 @@ class DebitNotesController extends AppController
 	$company_id=$this->Auth->User('session_company_id');
 	$financialYear_id=$this->Auth->User('financialYear_id');
 	$search=$this->request->query('search');
-        $this->paginate = [
+    $voucher_no=$this->request->query('voucher_no');
+    $From=$this->request->query('From');
+    $To=$this->request->query('To');
+        
+		$this->paginate = [
             'contain' => ['Companies','DebitNoteRows'=>['Ledgers']],
 			'limit' => 100
         ];
+		
+		if(!empty($voucher_no))
+			{
+				$where['DebitNotes.voucher_no']=$voucher_no;
+			}	
+
+		if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['DebitNotes.transaction_date >=']=$From;
+			}
+			
+		if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['DebitNotes.transaction_date <=']=$To;	
+			}			
+			
+		$where['DebitNotes.company_id']=$company_id;
+		$where['DebitNotes.financial_year_id']=$financialYear_id;
+		
 		if($search){
         $debitNotes = $this->paginate($this->DebitNotes->find()->where(['DebitNotes.company_id'=>$company_id,'DebitNotes.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -37,10 +62,10 @@ class DebitNotesController extends AppController
 			//...
 		 ]]));
 		}else{
-		  $debitNotes = $this->paginate($this->DebitNotes->find()->where(['DebitNotes.company_id'=>$company_id,'DebitNotes.financial_year_id'=>$financialYear_id]));	
+		  $debitNotes = $this->paginate($this->DebitNotes->find()->where($where));	
 		}
 		
-        $this->set(compact('debitNotes','search'));
+        $this->set(compact('debitNotes','search','voucher_no'));
         $this->set('_serialize', ['debitNotes']);
     }
 

@@ -17,11 +17,11 @@ $this->set('title', 'Purchase Invoice List');
 				<div class="actions">
 				<form method="GET" id="">
 					<div class="row">
-						<div class="col-md-2">
+						<!--<div class="col-md-2">
 							<?php echo $this->Form->input('search',['class'=>'form-control input-sm pull-right','label'=>false, 'placeholder'=>'Search','autofocus'=>'autofocus','value'=> @$search]);
 							?>
 						</div>
-						
+						-->
 						<div class='col-sm-2'>
 					  		<?php echo $this->Form->input('voucher_no',['class'=>'form-control input-sm pull-right','label'=>false, 'placeholder'=>'Voucher.No','value'=> @$voucher_no]);
 							?>
@@ -32,13 +32,13 @@ $this->set('title', 'Purchase Invoice List');
 						</div>
 						<div class='col-md-2'>
 								<div class="form-group">
-									<?= $this->Form->control('From',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'Form']);?>
+									<?= $this->Form->control('From',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'Form']);?>
 									<span class="help-block"></span>
 								</div>
 						</div>
 						<div class="col-md-2">
 							<div class="form-group">
-								 <?= $this->Form->control('To',['class'=>'form-control date-picker','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
+								 <?= $this->Form->control('To',['class'=>'form-control date-picker','data-date-format'=>'dd-mm-yyyy','label'=>false,'type'=>'text','placeholder'=>'To']); ?>
 								<span class="help-block"></span>
 							</div>
 						</div>
@@ -48,12 +48,12 @@ $this->set('title', 'Purchase Invoice List');
 								<?php echo $this->Form->control('item_id',['class'=>'form-control input-sm select2me item_id','label'=>false,'empty'=>'-Select Item-', 'options' => @$stockItems, 'value'=>$item_id ]); ?>
 								</div>
 						</div>
-						</div>	
-						<div class='row'>
-						<div class="col-md-12">
-							<button type="submit" class="go btn blue-madison input-sm pull-right">Go</button>
+						
+						
+						<div class="col-md-2">
+							<button type="submit" class="go btn blue-madison input-sm">Go</button>
 						</div> 
-						</div>	
+							
 			
 				</form>
 				</div>

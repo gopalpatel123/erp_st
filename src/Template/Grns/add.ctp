@@ -34,7 +34,7 @@ $this->set('title', 'Create Grn');
 					<div class="col-md-3">
 						<div class="form-group">
 							<label>Reference No.</label>
-							<?php echo $this->Form->control('reference_no', ['label' => false,'class' => 'form-control input-sm ','placeholder'=>'Reference No.', 'autofocus'=>'autofocus']); ?>
+							<?php echo $this->Form->control('reference_no', ['label' => false,'class' => 'form-control input-sm ','placeholder'=>'Reference No.', 'autofocus'=>'autofocus','oninput'=>"this.value = this.value.replace(/[^0-9]/g, '').replace(/(\..*)\./g, '$1');"]); ?>
 						</div>	
 					</div>
 					<div class="col-md-3">
@@ -51,6 +51,7 @@ $this->set('title', 'Create Grn');
 								<tr>
 									<td><label>Item<label></td>
 									<td><label>Quantity<label></td>
+									
 									<td><label>Purchase Rate Per Unit<label></td>
 									<td><label>Sale Rate Per Unit<label></td>
 									<td><label>Action<label></td>

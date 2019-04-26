@@ -189,6 +189,13 @@ return [
             'tls' => null,
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
+		'gmail' => [
+        'host' => 'ssl://smtp.gmail.com',
+        'port' => 465,
+        'username' => 'gopalkrishanp3@gmail.com',
+        'password' => '9001855886',
+        'className' => 'Smtp'
+          ],
     ],
 
     /**

@@ -2,6 +2,11 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Cake\View\Helper\TextHelper;
+use Cake\View\Helper\NumberHelper;
+use Cake\View\Helper\HtmlHelper;
 
 /**
  * Ledgers Controller
@@ -768,6 +773,97 @@ class LedgersController extends AppController
         $this->set('_serialize', ['day_book']);
     }
 	
+	public function dayBookNew($id = null)
+    {
+		$this->viewBuilder()->layout('index_layout');
+		$status=$this->request->query('status'); 
+		if(!empty($status)){ 
+			$this->viewBuilder()->layout('');	
+		}else{ 
+			$this->viewBuilder()->layout('index_layout');
+		}
+		$accountLedger     = $this->Ledgers->newEntity();
+	
+		$url=$this->request->here();
+		$url=parse_url($url,PHP_URL_QUERY);
+		$company_id        = $this->Auth->User('session_company_id');
+		$ledger_id         = $this->request->query('ledger_id');
+		$from_date         = $this->request->query('from_date');
+		$to_date           = $this->request->query('to_date');
+		$where =[];
+		if(!empty($from_date))
+		{
+			$from_date = date("Y-m-d",strtotime($from_date));
+			$where['AccountingEntries.transaction_date >=']=$from_date;
+		}
+		if(!empty($to_date))
+		{
+			$to_date   = date("Y-m-d",strtotime($to_date));
+			$where['AccountingEntries.transaction_date <=']=$to_date;
+		}
+		/* if(!empty($ledger_id))
+		{
+			$where['AccountingEntries.ledger_id']=$ledger_id;
+		}
+
+		if(!empty($ledger_id)){ 
+		
+		$query = $this->Ledgers->AccountingEntries->find();
+		$CaseCreditOpeningBalance = $query->newExpr()
+					->addCase(
+						$query->newExpr()->add(['ledger_id']),
+						$query->newExpr()->add(['credit']),
+						'decimal'
+					);
+		$CaseDebitOpeningBalance = $query->newExpr()
+					->addCase(
+						$query->newExpr()->add(['ledger_id']),
+						$query->newExpr()->add(['debit']),
+						'decimal'
+					);
+		$query->select([
+				'debit_opening_balance' => $query->func()->sum($CaseDebitOpeningBalance),
+				'credit_opening_balance' => $query->func()->sum($CaseCreditOpeningBalance),
+				'id','ledger_id'
+			])
+			->where(['AccountingEntries.company_id'=>$company_id,'AccountingEntries.transaction_date <'=>$from_date,'AccountingEntries.ledger_id'=>$ledger_id])
+			->group('ledger_id')
+			->autoFields(true);
+		$AccountLedgersOpeningBalance=($query);
+		$total_debit=0;
+		$total_credit=0;
+		foreach($AccountLedgersOpeningBalance as $AccountLedgersOpeningBalance){
+			$total_debit=$AccountLedgersOpeningBalance->debit_opening_balance;
+			$total_credit=$AccountLedgersOpeningBalance->credit_opening_balance;
+		}
+		@$opening_balance=$total_debit-$total_credit;
+			if($opening_balance>0){
+			@$opening_balance_type='Dr';	
+			}
+			else if($opening_balance<0){
+			$opening_balance=abs($opening_balance);
+			@$opening_balance_type='Cr';	
+			}
+			else{
+			@$opening_balance_type='';	
+			}
+		$opening_balance=round($opening_balance,2);*/
+		
+		 $AccountingLedgers=$this->Ledgers->AccountingEntries->find()->select(['total_credit_sum'=>'SUM(AccountingEntries.credit)','total_debit_sum'=>'SUM(AccountingEntries.debit)'])->where(['AccountingEntries.company_id'=>$company_id])->contain(['Ledgers','PurchaseVouchers','SalesInvoices','SaleReturns','Payments','SalesVouchers','Receipts','JournalVouchers','ContraVouchers','CreditNotes','DebitNotes','JournalVouchers','PurchaseInvoices','PurchaseReturns'])->where($where)->group(['AccountingEntries.ledger_id','AccountingEntries.purchase_voucher_id','AccountingEntries.sales_invoice_id','AccountingEntries.sale_return_id','AccountingEntries.purchase_invoice_id','AccountingEntries.purchase_return_id','AccountingEntries.receipt_id','AccountingEntries.payment_id','AccountingEntries.credit_note_id','AccountingEntries.debit_note_id','AccountingEntries.sales_voucher_id','AccountingEntries.journal_voucher_id','AccountingEntries.contra_voucher_id'])
+		->autoFields(true); 
+		
+		//pr($AccountingLedgers->toArray());exit;
+		//}
+		/*$AccountingLedgers=$this->Ledgers->AccountingEntries->find()->where(['AccountingEntries.company_id'=>$company_id])->contain(['Ledgers','PurchaseVouchers','SalesInvoices','SaleReturns','Payments','SalesVouchers','Receipts','JournalVouchers','ContraVouchers','CreditNotes','DebitNotes','JournalVouchers','PurchaseInvoices','PurchaseReturns'])->where($where)
+		->autoFields(true);
+		} */
+		//pr($AccountingLedgers->toArray());exit;
+		$ledgers = $this->Ledgers->find('list')->where(['company_id'=>$company_id]);
+		$companies=$this->Ledgers->Companies->find()->contain(['States'])->where(['Companies.id'=>$company_id])->first();
+		$this->set(compact('companies','accountLedger','ledgers','opening_balance_type','opening_balance','openingBalance_credit1','closingBalance_credit1','AccountingLedgers','from_date','to_date','voucher_type','voucher_no','ledger_id','url','status'));
+        $this->set('_serialize', ['ledger']);
+    }
+	
 	
 	public function overDueReport()
 	{
@@ -839,6 +935,269 @@ class LedgersController extends AppController
 		
 		
 	}
+	
+	public function overDueReportForMail()
+	{
+		$company_id=$this->Auth->User('session_company_id');
+		$this->viewBuilder()->layout('index_layout');
+		$status=$this->request->query('status'); 
+		if(!empty($status)){ 
+			$this->viewBuilder()->layout('');	
+		}else{ 
+			$this->viewBuilder()->layout('index_layout');
+		}
+		$url=$this->request->here();
+		$url=parse_url($url,PHP_URL_QUERY);
+		$run_time_date = date('Y-m-d');
+		
+		if(!empty($run_time_date)) {
+		$run_time_date = date("Y-m-d",strtotime($run_time_date)); }
+		
+		$parentSundryDebtors = $this->Ledgers->AccountingGroups->find()
+				->where(['AccountingGroups.company_id'=>$company_id, 'AccountingGroups.customer'=>'1']);
+		
+		$childSundryDebtors=[];
+		
+		foreach($parentSundryDebtors as $parentSundryDebtor)
+		{
+			$accountingGroups = $this->Ledgers->AccountingGroups->find('children', ['for' => $parentSundryDebtor->id]);
+			$childSundryDebtors[]=$parentSundryDebtor->id;
+			foreach($accountingGroups as $accountingGroup){
+				$childSundryDebtors[]=$accountingGroup->id;
+			}			
+		}
+		
+		$ledgerAccounts = $this->Ledgers->find()->where(['accounting_group_id IN'=>$childSundryDebtors]);
+		
+		$ledgerAccountids = [];
+
+		foreach($ledgerAccounts as $ledgerAccount)
+		{
+			$ledgerAccountids[]=$ledgerAccount->id;
+		}
+		
+		
+		$query=$this->Ledgers->AccountingEntries->find();
+		$query->select(['ledger_id','totalDebit' => $query->func()->sum('AccountingEntries.debit'),'totalCredit' => $query->func()->sum('AccountingEntries.credit')])
+				->group('AccountingEntries.ledger_id')
+				->where(['AccountingEntries.company_id'=>$company_id, 'AccountingEntries.transaction_date <='=>$run_time_date])
+				->contain(['Ledgers'=>function($q){
+					return $q->select(['Ledgers.accounting_group_id','Ledgers.id','Ledgers.name']);
+				}]);
+		$query->matching('Ledgers', function ($q) use($ledgerAccountids){
+			return $q->where(['Ledgers.id IN' => $ledgerAccountids]);
+		});
+		
+		//pr($query->toArray()); exit;
+		$x=$this->pdfDownload($query);
+		
+		
+		/* $reference_details = $this->Ledgers->ReferenceDetails->find()->contain(['Ledgers'])->where(['ReferenceDetails.company_id'=>$company_id, 'ReferenceDetails.type != ' => 'On Account']);
+		$reference_details->select(['total_debit' => $reference_details->func()->sum('ReferenceDetails.debit'),'total_credit' => $reference_details->func()->sum('ReferenceDetails.credit')])
+		->where(['ReferenceDetails.ledger_id IN '=> $ledgerAccountids,'ReferenceDetails.transaction_date <=' => $run_time_date])
+		->group(['ReferenceDetails.ref_name','ReferenceDetails.ledger_id'])
+		->autoFields(true);	 */
+
+		
+		$companies=$this->Ledgers->ReferenceDetails->Companies->find()->contain(['States'])->where(['Companies.id'=>$company_id])->first();
+		//pr($reference_details->toArray()); 
+		exit;
+		$this->set(compact('companies','reference_details','run_time_date','url','status'));
+        $this->set('_serialize', ['reference_details']);
+	}
+	public function pdfDownload($query=null){ //pr($query->toArray()); exit;
+		//$Number = new NumberHelper(new \Cake\View\View());
+		$Html = new HtmlHelper(new \Cake\View\View());
+		$Text = new TextHelper(new \Cake\View\View());
+
+		
+	require_once(ROOT . DS  .'vendor' . DS  . 'dompdf' . DS . 'autoload.inc.php');
+		
+		$options = new Options();
+		$options->set('defaultFont', 'Lato-Hairline');
+		$dompdf = new Dompdf($options);
+
+		$dompdf = new Dompdf();
+
+		//$html = pr($salesOrder);
+		$html = '
+		<html>
+		<head>
+		  <style>
+			 @page { margin: 150px 15px 10px 30px; }
+
+		  body{
+			line-height: 20px;
+			}
+			
+			#header { position:fixed; left: 0px; top: -150px; right: 0px; height: 150px;}
+			
+			#content{
+			position: relative; 
+			}
+			
+			@font-face {
+				font-family: Lato;
+				src: url("https://fonts.googleapis.com/css?family=Lato");
+			}
+			p{
+				margin:0;font-family: Lato;font-weight: 100;line-height: 12px !important;margin-top:-9px;
+			}
+			.odd td p{
+				margin:0;font-family: Lato;font-weight: 100;line-height: 17px !important;margin-bottom: -1px;
+			}
+			.show td p{
+					margin:0;font-family: Lato;font-weight: 100;line-height: 17px !important;
+			}
+			.topdata p{
+				margin:0;font-family: Lato;font-weight: 100;line-height: 17px !important;margin-bottom: 1px;
+			}
+			.even p{
+					margin: 0;
+					font-family: Lato;
+					font-weight: 100;
+					line-height: 18px !important;
+			}
+			table td{
+				margin:0;font-family: Lato;font-weight: 100;padding:0;line-height: 1;
+			}
+			table.table_rows tr.odd{
+				page-break-inside: avoid;
+			}
+			.table_rows, .table_rows th, .table_rows td {
+				border: 1px solid  #000; 
+				border-collapse: collapse;
+				padding:2px; 
+			}
+			.itemrow tbody td{
+				border-bottom: none;border-top: none;
+			}
+			
+			.table2 td{
+				border: 0px solid  #000;font-size: 14px;padding:0px; 
+			}
+			.table_top td{
+				font-size: 12px !important; 
+			}
+			.table-amnt td{
+				border: 0px solid  #000;padding:0px; 
+			}
+			.table_rows th{
+				border: 1px solid  #000;
+				font-size: 16px !important;px
+			}
+			.table_rows td{
+				border: 1px solid  #000;
+				font-size: 16px !important;
+			}
+			.avoid_break{
+				page-break-inside: avoid;
+			}
+			.table-bordered{
+				border: hidden;
+			}
+			table.table-bordered td {
+				border: hidden;
+			}
+			</style>
+		<body>
+		  
+		  
+		  <div id="content"> ';
+$html.='
+<table width="100%" class="table_rows">
+		<tr>
+			<th style="text-align: bottom;" rowspan="2">S No</th>
+			<th rowspan="2">Item</th>
+			<th rowspan="2">Unit</th>
+			<th rowspan="2">Quantity</th>
+			<th rowspan="2">Rate</th>
+			';
+$sr=0; $h="-"; foreach ($salesOrder->sales_order_rows as $salesOrderRows): $sr++; 
+$html.='
+	<tr class="odd">
+	    <td style="padding-top:8px;padding-bottom:5px;" valign="top" align="center">'. h($sr) .'</td>
+		<td style="padding-top:8px;" class="even" width="100%">';
+		
+		if(!empty($salesOrderRows->description)){
+			$html.= h($salesOrderRows->item->name).$salesOrderRows->description.'<div style="height:'.$salesOrderRows->height.'"></div>'
+		;
+		}else{
+			$html.= h($salesOrderRows->item->name).'<div style="height:'.$salesOrderRows->height.'"></div> ';
+		}
+		
+		$html.='</td>
+		<td align="right" valign="top"  style="padding-top:10px;">'. h($salesOrderRows->item->unit->name) .'</td>
+		<td style="padding-top:8px;padding-bottom:5px;" valign="top" align="center">'. h($salesOrderRows->quantity) .'</td>
+		<td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->rate,[ 'places' => 2]) .'</td>
+		<td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->amount,[ 'places' => 2]) .'</td>';
+		if($salesOrderRows->discount==0){
+		$html.='<td align="center" valign="top" style="padding-top:10px;">'. h($h) .'</td>
+		<td align="center" valign="top" style="padding-top:10px;">'. h($h) .'</td>';
+		}else{
+			$html.='<td align="center" valign="top" style="padding-top:10px;">'. h($salesOrderRows->discount_per) .'</td>
+		<td align="center" valign="top" style="padding-top:10px;">'. $Number->format($salesOrderRows->discount,[ 'places' => 2]) .'</td>';
+		}
+		if($salesOrderRows->pnf==0){
+		$html.='<td align="center" valign="top" style="padding-top:10px;">'. h($h) .'</td>
+		<td align="center" valign="top" style="padding-top:10px;">'. h($h) .'</td>';
+		}else{
+			$html.='<td align="center" valign="top" style="padding-top:10px;">'. h($salesOrderRows->pnf_per) .'</td>
+		<td align="center" valign="top" style="padding-top:10px;">'. $Number->format($salesOrderRows->pnf,[ 'places' => 2]) .'</td>';
+		}
+		
+		$html.='<td align="center" valign="top" style="padding-top:10px;">'. h($salesOrderRows->taxable_value) .'</td>';
+		if($salesOrderRows->cgst_per > 0){ 
+		$html.='<td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">';
+            if($cgst_per[$salesOrderRows->id]['tax_figure'] >= 0)
+			{
+				$html.=$cgst_per[$salesOrderRows->id]['tax_figure'].'%';
+			}
+			$html.='</td><td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->cgst_amount,['places'=>2]) .'</td>';
+		}
+		
+		if($salesOrderRows->sgst_per > 0){ 
+		$html.='<td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">';
+			if($sgst_per[$salesOrderRows->id]['tax_figure'] >= 0)
+			{
+				$html.=$sgst_per[$salesOrderRows->id]['tax_figure'].'%';
+			}
+		$html.='</td><td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->sgst_amount,['places'=>2]) .'</td>';
+		}
+		
+		if($salesOrderRows->igst_per > 0){ 
+		$html.='<td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">';
+			if($igst_per[$salesOrderRows->id]['tax_figure'] >= 0)
+			{
+				$html.=$igst_per[$salesOrderRows->id]['tax_figure'].'%';
+			}
+			$html.='</td><td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->igst_amount,['places'=>2]) .'</td>';
+		}
+		
+		$html.='</td><td style="padding-top:8px;padding-bottom:5px;" align="right" valign="top">'. $Number->format($salesOrderRows->total,['places'=>2]) .'</td>
+	</tr>';
+	
+endforeach;
+
+
+
+
+$html .= '</div>
+</body>
+</html>';
+		  
+		//echo $html; exit;
+		
+		$name='last_so';
+		$dompdf->loadHtml($html);
+		$dompdf->setPaper('A4', 'landscape');
+		$dompdf->render();
+		$output = $dompdf->output(); //echo $name; exit;
+		file_put_contents('Invoice_email/'.$name.'.pdf', $output);
+		//$dompdf->stream($name,array('Attachment'=>0));
+		return;
+	}
+
 	
 	
 	public function overDueReportPayable()

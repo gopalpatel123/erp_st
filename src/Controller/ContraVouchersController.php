@@ -24,10 +24,43 @@ class ContraVouchersController extends AppController
 		$company_id=$this->Auth->User('session_company_id');
 		$financialYear_id=$this->Auth->User('financialYear_id');
 		$search=$this->request->query('search');
-        $this->paginate = [
+		$voucher_no=$this->request->query('voucher_no');
+		$From=$this->request->query('From');
+		$To=$this->request->query('To');
+		$reference_no=$this->request->query('reference_no');
+		
+			
+		$this->paginate = [
             'contain' => ['Companies','ContraVoucherRows'=>'Ledgers'],
 			'limit' => 100
         ];
+		 if(!empty($voucher_no))
+			{
+				$where['ContraVouchers.voucher_no']=$voucher_no;
+			}	
+			if(!empty($From))
+			{
+				$From=date("Y-m-d",strtotime($From));
+				$where['ContraVouchers.transaction_date >='] = $From;				
+			}			 
+		
+			if(!empty($To))
+			{
+				$To=date("Y-m-d",strtotime($To));
+				$where['ContraVouchers.transaction_date <='] = $To;				
+			}			 
+			
+			if(!empty($reference_no))
+			{
+				$where['ContraVouchers.reference_no']=$reference_no;
+			}	
+			
+			
+		   
+			
+		$where['ContraVouchers.company_id']=$company_id;
+		$where['ContraVouchers.financial_year_id']=$financialYear_id;
+		
 		if($search){
 		$contraVouchers = $this->paginate($this->ContraVouchers->find()->where(['ContraVouchers.company_id'=>$company_id,'ContraVouchers.financial_year_id'=>$financialYear_id])->where([
 		'OR' => [
@@ -39,9 +72,9 @@ class ContraVouchersController extends AppController
 		 ]]));
 		}
 		else {
-        $contraVouchers = $this->paginate($this->ContraVouchers->find()->where(['ContraVouchers.company_id'=>$company_id,'ContraVouchers.financial_year_id'=>$financialYear_id]));
+        $contraVouchers = $this->paginate($this->ContraVouchers->find()->where($where));
 		}
-        $this->set(compact('contraVouchers','search'));
+        $this->set(compact('contraVouchers','search','voucher_no','reference_no','From','To'));
         $this->set('_serialize', ['contraVouchers']);
     }
 

@@ -30,28 +30,28 @@ class SaleReturnsController extends AppController
 		$sales_invoice_no=$this->request->query('sales_invoice_no');
 		
 		
+		
+		
 		$this->paginate = [
             'contain' => [],
 			'limit' => 100
         ];
-			if(!empty($voucher_no))
+			 if(!empty($voucher_no))
 			{
-				$where['SaleReturns.voucher_no']=$voucher_no;
-					
+			 	$where['SaleReturns.voucher_no']=$voucher_no;
 			}
 			
-		if(!empty($sales_invoice_no))	
-		{
-			$where['SalesInvoices.voucher_no']=$sales_invoice_no;
-				
-		}
-			
+		if(!empty($sales_invoice_no))
+			{
+				$where['SalesInvoices.voucher_no']=$sales_invoice_no;
+			}
+		
 		if(!empty($From))
 			{
-				$From=date("Y-m-d",strtotime($From));
-				$where['SaleReturns.transaction_date >='] = $From;				
+					$From=date("Y-m-d",strtotime($From));
+					$where['SaleReturns.transaction_date >='] = $From;				
 			}
-			
+		
 		if(!empty($To))
 			{ 
 				$To=date("Y-m-d",strtotime($To));
@@ -61,8 +61,9 @@ class SaleReturnsController extends AppController
 		$where['SaleReturns.company_id '] = $company_id;
 		$where['SaleReturns.financial_year_id '] = $financialYear_id;
 		 
-		 $saleReturns = $this->paginate($this->SaleReturns->find()->contain(['Companies',  'SalesLedgers', 'PartyLedgers', 'Locations', 'SalesInvoices'])->where($where)->where([
+		 $saleReturns = $this->paginate($this->SaleReturns->find()->contain(['Companies',  'SalesLedgers', 'PartyLedgers', 'Locations','SalesInvoices'])->where($where)->where([
 		'OR' => [
+				
             'SalesInvoices.voucher_no' => $search,
             // ...
 			'SaleReturns.voucher_no' => $search,
@@ -74,7 +75,8 @@ class SaleReturnsController extends AppController
 			'SaleReturns.amount_after_tax' => $search
         ]])->order(['SaleReturns.id'=>'DESC']));
 		//pr($saleReturns); exit;
-        $this->set(compact('saleReturns','search','status'));
+			
+		$this->set(compact('saleReturns','search','status','voucher_no','sales_invoice_no'));
         $this->set('_serialize', ['saleReturns']);
     }
  /**
